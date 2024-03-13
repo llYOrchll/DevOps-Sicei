@@ -1,21 +1,47 @@
-from django.http import JsonResponse
-from .models import alumnos_lista
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import listaAlumnos
+from .serializers import alumnosSerializer
 
-def lista_alumnos(request):
-    alumnos = alumnos_lista.objects.all()
-    data = [{'id': alumnos.id, 'nombre': alumnos.nombre, 'matricula': alumnos.matricula} for alumnos in alumnos_lista]
-    return JsonResponse(data, safe=False)
+class alumnoView(APIView):
+    def get(self, request, pk=None):
+        if pk is not None:
+            alumno = listaAlumnos.get(pk=pk)
+            serializer = alumnosSerializer(alumno)
+            return Response(serializer.data)
+        else:
+            alumnos = listaAlumnos.objects.all()
+            serializer = alumnosSerializer(alumnos, many=True)
+            return Response(serializer.data)
+        
+    def post(self, request):
+        serializer = alumnosSerializer(data=request.data)
+        if serializer.is_valis():
+            serializer.save()
+            return Response(serializer.data, status=status._CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self, request, pk=None):
+        if pk is not None:
+            alumno = listaAlumnos.objects.get(pk=pk)
+            serializer = alumnosSerializer(alumno, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'Provide a valid student ID'}, status=status.HTTP_400_BAD_REQUEST)
 
-def obtener_alumno(request, id):
-    try:
-        alumno = alumnos_lista.objects.get(id=id)
-    except alumnos_lista.DoesNotExist:
-        return JsonResponse({'error': 'Alumno no encontrado'}, status=404)
-    if request.method == 'GET':
-        id = request.get('id')
-        nombre = request.get('nombre')
-        matricula = request.get('matricula')
-        return JsonResponse({'ID: ':id, '\nNombre: ':nombre, '\Matricula: ':matricula})
+    def delete(self, request, pk=None):
+        if pk is not None:
+            alumno = listaAlumnos.objects.get(pk=pk)
+            alumno.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            alumnos = listaAlumnos.objects.all()
+            alumnos.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 """def crear_alumno(request):
