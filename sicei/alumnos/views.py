@@ -17,7 +17,7 @@ class alumnoView(APIView):
         
     def post(self, request):
         serializer = alumnosSerializer(data=request.data)
-        if serializer.is_valis():
+        if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status._CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
